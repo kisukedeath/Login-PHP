@@ -1,0 +1,23 @@
+<?php
+include_once ('../model/bdconexion.class.php');
+
+class archivo {
+ 
+    private $con;
+    
+    function archivo(){
+        $this->con = new bdconexion;
+
+    }
+    function subir($fileName,$fileSizeb,$fileType,$ruta){
+       
+        $this->con->insertar("Insert into tb_documento(nomDocumento,tamDocumento,tipoDocumento,rutaDocumento)values('$fileName','$fileSizeb','$fileType','$ruta')");
+        
+    } 
+    function subirdrop($nombre, $size, $type, $nruta, $titulo, $descrip,$ver){
+        $this->con->insertar("Insert into tb_documento (nomDocumento,tamDocumento,tipoDocumento,rutaDocumento,titDocumento,descDocumento,verDocumento)values('$nombre','$size','$type','$nruta','$titulo','$descrip','$ver')");
+    }
+    
+}
+
+?>

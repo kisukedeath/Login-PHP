@@ -22,10 +22,12 @@ class bdconexion {
     
     //Constructor
     function bdconexion(){
-        $this->database= '';
-        $this->host= 'localhost';
-        $this->user= '';
-        $this->pass= '';      
+
+        $server = 'OVEJO-PC\SQL2012';//serverName\instanceName
+        $this->database= 'test';
+        $this->host= $server;
+        $this->user= 'kisuke';
+        $this->pass= 'shakugan';      
         
         $this->conection_success = 'Se estableci&oacute; correctamente la conexi&oacute;n.';
         $this->conection_fail = 'Hubo una falla en la conexi&oacute;n.';
@@ -40,42 +42,48 @@ class bdconexion {
 
     public function conectar(){
         $success = true;
-       
-        //crear conexion a la base de datos (mysql_connect{"localhost","root","");
-        if(!($con=  mysql_connect($this->host,  $this->user, $this->pass))){
+        //crear conexion a la base de datos 
+        $connectionInfo = array( "Database"=>$this->database, "UID"=>$this->user, "PWD"=>$this->pass);
+
+        if(!($con = sqlsrv_connect( $this->host, $connectionInfo))){
             $success= false;
-       
+            die( print_r( sqlsrv_errors(), true));
         }
-        //seleccionar base de datos a utilizar
-        if(!(mysql_select_db($this->database,$con))){        
-            $success=false;
-       
-        }
-        
+ 
         if($success){        
             $this->conexion = $con;      
         }
        
-        
         return $success;  
     }
+
+    /*
+    $serverName = "OVEJO-PC\SQL2012"; //serverName\instanceName
+    $connectionInfo = array( "Database"=>"test", "UID"=>"kisuke", "PWD"=>"shakugan");
+    $conn = sqlsrv_connect( $serverName, $connectionInfo);
+
+    if( $conn ) {
+         echo "Conexión establecida.<br />";
+    }else{
+         echo "Conexión no se pudo establecer.<br />";
+         die( print_r( sqlsrv_errors(), true));
+    }
+    */
     
     public function insertar($query){
-        if($this->conectar()){      
-         //  echo $query;    
-            if(mysql_query($query, $this->conexion)){       
+        if($this->conectar()){         
+            if(sqlsrv_query( $this->conexion,$query)){       
                 echo "true";
             }else
                 echo "false";
         }else        
-        die("Falló la conexión a la Base de Datos: " .mysql_error());
+        die("Falló la conexión a la Base de Datos: ");
     }
 
 
     public function actualizar($query) {
             if($this->conectar()) {
-        //        echo $query;    
-                if(mysql_query($query, $this->conexion)) {
+                if(sqlsrv_query($this->conexion,$query)) {
                     echo $this->update_success;
                 }
                 else {
@@ -87,18 +95,49 @@ class bdconexion {
             }
         }
 
-       
-     public function listar($query) {
 
+    public function comprobar($query,$password) {
             if($this->conectar()) {
-                $result = mysql_query($query, $this->conexion);
-                
+                $result = sqlsrv_query($this->conexion,$query,array(), array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
                 if(!empty($result)) {
-                    $total = mysql_num_rows($result);
-                    
+                    $total = sqlsrv_num_rows($result);
+                    if ($total === false){
+                       echo "Error in retrieveing row count."."<br>"; 
+                       print_r(sqlsrv_errors()); 
+                    }
                     if($total > 0) {
                         $print = "";
-                        while($row = mysql_fetch_assoc($result)) {
+                        if($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
+                            if($row['password'] == $password){
+                                $u = $row['usuario'];
+                                return $u;
+                            }else{
+                                echo 'password incorrecto <br> <a href="../index.php">volver</a>';
+                            }
+                        }
+                    }else{
+                    echo 'Usuario no existe en la base de datos <br> <a href="../index.php">volver</a>';
+                    }  
+                }
+            }
+            else {
+                echo $this->conection_fail;
+            }
+      }
+    
+
+     public function listar($query) {
+            if($this->conectar()) {
+                $result = sqlsrv_query($this->conexion,$query,array(), array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
+                if(!empty($result)) {
+                    $total = sqlsrv_num_rows($result);
+                    if ($total === false){
+                       echo "Error in retrieveing row count."."<br>"; 
+                       print_r(sqlsrv_errors()); 
+                    }  
+                    if($total > 0) {
+                        $print = "";
+                        while($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
                             foreach($row as &$fila) {
                                 $print .= $fila.",";
                             }
@@ -111,19 +150,20 @@ class bdconexion {
             else {
                 echo $this->conection_fail;
             }
-        }
+      }
         
-     public function listar2($query) {
-
+        public function listar2($query) {
             if($this->conectar()) {
-                $result = mysql_query($query, $this->conexion);
-                
+                $result = sqlsrv_query($this->conexion,$query,array(), array( "Scrollable" => SQLSRV_CURSOR_KEYSET ));
                 if(!empty($result)) {
-                    $total = mysql_num_rows($result);
-                    
+                    $total = sqlsrv_num_rows($result);
+                    if ($total === false){
+                       echo "Error in retrieveing row count."."<br>"; 
+                       print_r(sqlsrv_errors()); 
+                    }  
                     if($total > 0) {
                         $print = "";
-                        while($row = mysql_fetch_assoc($result)) {
+                        while($row = sqlsrv_fetch_array($result, SQLSRV_FETCH_ASSOC)) {
                             foreach($row as &$fila) {
                                 $print .= $fila."<,>";
                             }
@@ -136,8 +176,8 @@ class bdconexion {
             else {
                 echo $this->conection_fail;
             }
-        }   
-    
+      }
+
 
      public function mensaje_insertar($success, $message) {
             if($success == true) {
